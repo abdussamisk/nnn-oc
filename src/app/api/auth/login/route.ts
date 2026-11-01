@@ -25,7 +25,9 @@ export async function GET(request: Request) {
     },
   });
 
-  const callbackUrl = new URL("/auth/callback", requestUrl.origin).toString();
+   const baseOrigin = process.env.NEXT_PUBLIC_SITE_URL || requestUrl.origin;
+  const cleanOrigin = baseOrigin.endsWith('/') ? baseOrigin.slice(0, -1) : baseOrigin;
+  const callbackUrl = `${cleanOrigin}/auth/callback`;
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
