@@ -12,15 +12,19 @@ export async function GET(request: Request) {
   const cookieStore = await cookies();
   const next = safeNextPath(cookieStore.get("nnn_next")?.value);
 
+  // Setup the production domain origin context safely
+  const baseOrigin = process.env.NEXT_PUBLIC_SITE_URL || requestUrl.origin;
+  const cleanOrigin = baseOrigin.endsWith('/') ? baseOrigin.slice(0, -1) : baseOrigin;
+
   if (!code) {
-    return NextResponse.redirect(new URL("/login?error=callback", requestUrl.origin));
+    return NextResponse.redirect(`${cleanOrigin}/login?error=callback`);
   }
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error || !data.user) {
-    return NextResponse.redirect(new URL("/login?error=callback", requestUrl.origin));
+    return NextResponse.redirect(`${cleanOrigin}/login?error=callback`);
   }
 
   const { data: profile } = await supabase
@@ -30,7 +34,7 @@ export async function GET(request: Request) {
     .maybeSingle();
 
   const destination = profile ? next : "/onboarding";
-  const response = NextResponse.redirect(new URL(destination, requestUrl.origin));
+  const response = NextResponse.redirect(`${cleanOrigin}${destination}`);
   response.cookies.delete("nnn_next");
   return response;
 }
